@@ -1,0 +1,12 @@
+Source: ros-melodic-mikrotik-swos-tools
+Section: misc
+Priority: optional
+Maintainer: Martin Pecka <peckama2@fel.cvut.cz>
+Build-Depends: debhelper (>= 9.0.0), ros-melodic-catkin, ros-melodic-message-generation, ros-melodic-std-msgs
+Homepage: https://github.com/peci1/mikrotik_swos_tools
+Standards-Version: 3.9.2
+
+Package: ros-melodic-mikrotik-swos-tools
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, python-requests, ros-melodic-message-runtime, ros-melodic-rospy, ros-melodic-std-msgs
+Description: Integration between ROS (Robot Operating System) and Mikrotik SwOS
