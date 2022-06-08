@@ -1,3 +1,26 @@
+## mikrotik_swos_tools (noetic) - 1.1.0-1
+
+The packages in the `mikrotik_swos_tools` repository were released into the `noetic` distro by running `/usr/local/bin/bloom-release --track noetic -r noetic mikrotik_swos_tools` on `Wed, 08 Jun 2022 07:55:21 -0000`
+
+The `mikrotik_swos_tools` package was released.
+
+Version of package(s) in repository `mikrotik_swos_tools`:
+
+- upstream repository: https://github.com/peci1/mikrotik_swos_tools.git
+- release repository: unknown
+- rosdistro version: `null`
+- old version: `null`
+- new version: `1.1.0-1`
+
+Versions of tools used:
+
+- bloom version: `0.11.1`
+- catkin_pkg version: `0.5.2`
+- rosdep version: `0.21.0`
+- rosdistro version: `0.8.3`
+- vcstools version: `0.1.42`
+
+
 ## mikrotik_swos_tools (melodic) - 1.0.1-1
 
 The packages in the `mikrotik_swos_tools` repository were released into the `melodic` distro by running `/usr/bin/bloom-release -t melodic --ros-distro melodic mikrotik_swos_tools` on `Mon, 10 Feb 2020 06:15:07 -0000`
