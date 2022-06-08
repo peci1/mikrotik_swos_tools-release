@@ -35,14 +35,14 @@ class SwOSAPI:
                 try:
                     self._collect_sys_tab_data()
                     switch_ok = True
-                except requests.exceptions.RequestException, e:
+                except requests.exceptions.RequestException as e:
                     rospy.logwarn("Waiting for switch management interface %s to become available." % self._address)
                     rospy.logdebug("Switch management interface error: " + str(e))
                     rospy.sleep(rospy.Duration(1, 0))
             if rospy.is_shutdown():
                 return
 
-        self._stats_pub = rospy.Publisher('~statistics', Statistics)
+        self._stats_pub = rospy.Publisher('~statistics', Statistics, queue_size=1)
 
         rospy.loginfo("Set up Mikrotik SwOS API on %s" % (self._address, ))
 
@@ -128,44 +128,47 @@ class SwOSAPI:
         result.port_numbers = self.enabled_port_numbers
 
         # rate
-        result.rx_rate_bytes = [self._decode_byte_rate(d) for d in stats['rrb']]
+        result.rx_rate_bytes = [self._decode_byte_rate(d) / 8 for d in stats['rrb']]
         result.rx_rate_packets = [self._decode_packet_rate(d) for d in stats['rrp']]
-        result.tx_rate_bytes = [self._decode_byte_rate(d) for d in stats['trb']]
+        result.tx_rate_bytes = [self._decode_byte_rate(d) / 8 for d in stats['trb']]
         result.tx_rate_packets = [self._decode_packet_rate(d) for d in stats['trp']]
 
         # rx
-        result.rx_bytes = [self._decode_long(d) for d in stats['rb']]
-        result.rx_packets = [self._decode_long(d) for d in stats['rtp']]
-        result.rx_unicasts = [self._decode_long(d) for d in stats['rup']]
-        result.rx_broadcasts = [self._decode_long(d) for d in stats['rbp']]
-        result.rx_multicasts = [self._decode_long(d) for d in stats['rmp']]
-        result.rx_64 = [self._decode_long(d) for d in stats['r64']]
-        result.rx_127 = [self._decode_long(d) for d in stats['r65']]
-        result.rx_255 = [self._decode_long(d) for d in stats['r128']]
-        result.rx_511 = [self._decode_long(d) for d in stats['r256']]
-        result.rx_1023 = [self._decode_long(d) for d in stats['r512']]
-        result.rx_1518 = [self._decode_long(d) for d in stats['r1k']]
-        result.rx_jumbo = [self._decode_long(d) for d in stats['rmax']]
+        result.rx_bytes = self._get_long_stats(stats, 'rb')
+        result.rx_packets = [self._decode_int(d) for d in stats['rtp']]
+        result.rx_unicasts = self._get_long_stats(stats, 'rup')
+        result.rx_broadcasts = self._get_long_stats(stats, 'rbp')
+        result.rx_multicasts = self._get_long_stats(stats, 'rmp')
+        result.rx_64 = [self._decode_int(d) for d in stats['r64']]
+        result.rx_127 = [self._decode_int(d) for d in stats['r65']]
+        result.rx_255 = [self._decode_int(d) for d in stats['r128']]
+        result.rx_511 = [self._decode_int(d) for d in stats['r256']]
+        result.rx_1023 = [self._decode_int(d) for d in stats['r512']]
+        result.rx_1518 = [self._decode_int(d) for d in stats['r1k']]
+        result.rx_jumbo = [self._decode_int(d) for d in stats['rmax']]
 
         # tx
-        result.tx_bytes = [self._decode_long(d) for d in stats['tb']]
-        result.tx_packets = [self._decode_long(d) for d in stats['ttp']]
-        result.tx_unicasts = [self._decode_long(d) for d in stats['tup']]
-        result.tx_broadcasts = [self._decode_long(d) for d in stats['tbp']]
-        result.tx_multicasts = [self._decode_long(d) for d in stats['tmp']]
-        result.tx_64 = [self._decode_long(d) for d in stats['t64']]
-        result.tx_127 = [self._decode_long(d) for d in stats['t65']]
-        result.tx_255 = [self._decode_long(d) for d in stats['t128']]
-        result.tx_511 = [self._decode_long(d) for d in stats['t256']]
-        result.tx_1023 = [self._decode_long(d) for d in stats['t512']]
-        result.tx_1518 = [self._decode_long(d) for d in stats['t1k']]
-        result.tx_jumbo = [self._decode_long(d) for d in stats['tmax']]
+        result.tx_bytes = self._get_long_stats(stats, 'tb')
+        result.tx_packets = [self._decode_int(d) for d in stats['ttp']]
+        result.tx_unicasts = self._get_long_stats(stats, 'tup')
+        result.tx_broadcasts = self._get_long_stats(stats, 'tbp')
+        result.tx_multicasts = self._get_long_stats(stats, 'tmp')
+        result.tx_64 = [self._decode_int(d) for d in stats['t64']]
+        result.tx_127 = [self._decode_int(d) for d in stats['t65']]
+        result.tx_255 = [self._decode_int(d) for d in stats['t128']]
+        result.tx_511 = [self._decode_int(d) for d in stats['t256']]
+        result.tx_1023 = [self._decode_int(d) for d in stats['t512']]
+        result.tx_1518 = [self._decode_int(d) for d in stats['t1k']]
+        result.tx_jumbo = [self._decode_int(d) for d in stats['tmax']]
 
         return result
 
     def run(self):
         while not rospy.is_shutdown():
-            self._stats_pub.publish(self._collect_statistics_tab_data())
+            try:
+                self._stats_pub.publish(self._collect_statistics_tab_data())
+            except requests.exceptions.RequestException as e:
+                rospy.logerr("Error communicating with Mikrotik SwOS API: " + str(e))
             self._rate.sleep()
 
     @staticmethod
@@ -177,8 +180,15 @@ class SwOSAPI:
         return int(s, base=16)
 
     @staticmethod
-    def _decode_long(s):
-        return int(s, base=16)
+    def _decode_int(s):
+        return long(s, base=16)
+
+    @staticmethod
+    def _decode_long(s_low, s_high):
+        return long("0x" + s_high[2:] + s_low[2:], base=16)
+
+    def _get_long_stats(self, stats, param):
+        return [self._decode_long(d, dh) for d, dh in zip(stats[param], stats[param + 'h'])]
 
     @staticmethod
     def _decode_string(s):
