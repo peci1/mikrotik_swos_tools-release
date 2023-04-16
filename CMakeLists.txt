@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8.0)
+cmake_minimum_required(VERSION 3.10.2)
 project(mikrotik_swos_tools)
 
 find_package(catkin REQUIRED COMPONENTS message_generation std_msgs)
